@@ -45,7 +45,20 @@ function showScreen(screenName) {
     document.getElementById('mainScreen').classList.add('hidden');
     document.getElementById('quizScreen').classList.add('hidden');
     document.getElementById('resultScreen').classList.add('hidden');
+    document.getElementById('listScreen').classList.add('hidden');
     document.getElementById(screenName).classList.remove('hidden');
+}
+
+function showKanjiList() {
+    const listEl = document.getElementById('kanjiList');
+    listEl.innerHTML = kanjiData.map((item, i) => `
+        <div class="kanji-list-item">
+            <span class="list-number">${i + 1}</span>
+            <span class="list-question">${item.question}</span>
+            <span class="list-answer">${item.answer}</span>
+        </div>
+    `).join('');
+    showScreen('listScreen');
 }
 
 function startQuiz(reviewMode = false) {
@@ -170,6 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // メインボタン
     document.getElementById('startBtn').addEventListener('click', () => startQuiz(false));
     document.getElementById('reviewBtn').addEventListener('click', () => startQuiz(true));
+    document.getElementById('listBtn').addEventListener('click', () => showKanjiList());
+    document.getElementById('listHomeBtn').addEventListener('click', () => showScreen('mainScreen'));
     document.getElementById('resetBtn').addEventListener('click', () => {
         if (confirm('本当に進捗をリセットしますか？')) {
             wrongList = [];
