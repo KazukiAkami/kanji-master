@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="漢字マスター">
+    <title>漢字マスター</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>📚 漢字マスター</h1>
+            <div class="stats">
+                <span id="progress">0/193</span>
+                <span id="score">正解率: 0%</span>
+            </div>
+        </header>
+
+        <main id="mainScreen">
+            <div class="start-screen">
+                <h2>ようこそ！</h2>
+                <p>漢字の書き取り問題を練習しよう</p>
+                <button id="startBtn" class="primary-btn">学習をはじめる</button>
+                <button id="reviewBtn" class="secondary-btn">復習する（まちがえた問題）</button>
+                <button id="resetBtn" class="reset-btn">進捗をリセット</button>
+            </div>
+        </main>
+
+        <main id="quizScreen" class="hidden">
+            <div class="quiz-container">
+                <div class="quiz-header">
+                    <button id="backBtn" class="back-btn">← 前の問題</button>
+                    <span id="quizProgress"></span>
+                </div>
+
+                <div class="card-container">
+                    <div id="card" class="card">
+                        <div class="card-front">
+                            <div class="question-type"></div>
+                            <div class="kanji-large"></div>
+                            <div class="button-group-horizontal">
+                                <button class="show-answer-btn">答えを見る</button>
+                                <button class="skip-btn">次の問題に進む</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="answerSection" class="answer-section hidden">
+                    <div class="answer-display"></div>
+                    <div class="button-group">
+                        <button id="wrongBtn" class="wrong-btn">✗ まちがえた</button>
+                        <button id="correctBtn" class="correct-btn">✓ 正解！</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="resultScreen" class="hidden">
+            <div class="result-container">
+                <h2>おつかれさま！</h2>
+                <div class="result-stats">
+                    <p class="result-score"></p>
+                    <p class="result-detail"></p>
+                </div>
+                <button id="restartBtn" class="primary-btn">もう一度</button>
+                <button id="homeBtn" class="secondary-btn">ホームに戻る</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="kanji-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
