@@ -25,7 +25,7 @@ function saveProgress() {
 function updateStats() {
     const total = kanjiData.length;
     document.getElementById('progress').textContent = `問題数: ${total}問`;
-    document.getElementById('score').textContent = `正解率: ${lastQuizCorrectRate}%`;
+    document.getElementById('score').textContent = `正解数: 0問`;
 
     const reviewBtn = document.getElementById('reviewBtn');
     reviewBtn.textContent = `復習する（まちがえた問題: ${wrongList.length}）`;
@@ -52,6 +52,7 @@ function startQuiz(reviewMode = false) {
     currentQuizIndex = 0;
     correctCount = 0;
     userAnswers = [];
+    document.getElementById('score').textContent = `正解数: 0問`;
 
     if (reviewMode) {
         quizList = shuffleArray(wrongList);
@@ -139,10 +140,15 @@ function handleAnswer(isCorrect) {
         }
     }
 
+    updateLiveScore();
     saveProgress();
 
     currentQuizIndex++;
     showQuestion();
+}
+
+function updateLiveScore() {
+    document.getElementById('score').textContent = `正解数: ${correctCount}問`;
 }
 
 function showResult() {
@@ -183,6 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('correctBtn').addEventListener('click', () => handleAnswer(true));
     document.getElementById('wrongBtn').addEventListener('click', () => handleAnswer(false));
+    document.getElementById('quizHomeBtn').addEventListener('click', () => { updateStats(); showScreen('mainScreen'); });
+    document.getElementById('titleBtn').addEventListener('click', () => { updateStats(); showScreen('mainScreen'); });
 
     // 結果画面ボタン
     document.getElementById('restartBtn').addEventListener('click', () => startQuiz(false));
