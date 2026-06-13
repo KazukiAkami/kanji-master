@@ -10,7 +10,7 @@ const kanjiData = [
     { question: '一代でザイサンを築く', answer: '財産' },
     { question: 'ザツゼンとした部屋', answer: '雑然' },
     { question: '【読み】心の支えを失う', answer: '心のささえを失う' },
-    { question: '【読み】口は災いの門', answer: '口はわざわいのかど },
+    { question: '【読み】口は災いの門', answer: '口はわざわいのかど' },
     { question: '【読み】名前を告げる', answer: '名前をつげる' },
     { question: '【読み】車内が混みあう', answer: '車内がこみあう' },
     { question: '【読み】罪をつぐなう', answer: 'つみをつぐなう' },
