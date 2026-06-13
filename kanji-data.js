@@ -55,6 +55,4 @@ const kanjiData = [
     { question: '公園でじどうたちが遊んでいる。', answer: '児童' },
     { question: 'かこの出来事をふり返った。', answer: '過去' },
     { question: '弟は明るいせいかくをしている。', answer: '性格' },
-        { question: '弟は明るいせいかくをしている。', answer: '性格' },
-
 ];
