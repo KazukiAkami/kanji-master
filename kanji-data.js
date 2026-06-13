@@ -1,4 +1,7 @@
 const kanjiData = [
+    { question: '【読み】店を構える', answer: '店をかまえる' },
+    { question: '【読み】お米に石が混じる', answer: 'まじる' },
+    { question: '【読み】再びあやまちを繰り返さない', answer: 'ふたたび' },
     { question: '店を構える', answer: '店をかまえる' },
     { question: 'お米に石が混じる', answer: 'まじる' },
     { question: '再びあやまちを繰り返さない', answer: 'ふたたび' },
