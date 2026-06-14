@@ -77,6 +77,32 @@ main {
     margin-bottom: 30px;
 }
 
+.quiz-select-row {
+    text-align: left;
+    margin-bottom: 25px;
+}
+
+.quiz-select-row label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+#quizSelect {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    font-size: 16px; /* iOSで選択時に自動ズームしないよう16px以上 */
+    font-family: inherit;
+    color: #333;
+    background: #f7f7fb;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
 button {
     border: none;
     border-radius: 12px;
@@ -85,6 +111,7 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
     font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .primary-btn {
