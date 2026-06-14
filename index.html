@@ -15,8 +15,8 @@
         <header>
             <h1 id="titleBtn">📚 漢字マスター</h1>
             <div class="stats">
-                <span id="progress">0/193</span>
-                <span id="score">正解率: 0%</span>
+                <span id="progress">問題集を選んでね</span>
+                <span id="score">正解数: 0問</span>
             </div>
         </header>
 
@@ -24,6 +24,10 @@
             <div class="start-screen">
                 <h2>ようこそ！</h2>
                 <p>漢字の書き取り問題を練習しよう</p>
+                <div class="quiz-select-row">
+                    <label for="quizSelect">問題集をえらぶ</label>
+                    <select id="quizSelect"></select>
+                </div>
                 <button id="startBtn" class="primary-btn">学習をはじめる</button>
                 <button id="reviewBtn" class="secondary-btn">復習する（まちがえた問題）</button>
                 <button id="listBtn" class="secondary-btn">漢字一覧を見る</button>
@@ -85,6 +89,7 @@
         </main>
     </div>
 
+    <script src="csv.js"></script>
     <script src="kanji-data.js"></script>
     <script src="app.js"></script>
 </body>
