@@ -5,31 +5,89 @@ let wrongList = [];
 let userAnswers = [];
 let lastQuizCorrectRate = 0;
 
-function loadProgress() {
-    const saved = localStorage.getItem('kanjiProgress');
-    if (saved) {
-        const data = JSON.parse(saved);
-        wrongList = data.wrongList || [];
-        lastQuizCorrectRate = data.lastQuizCorrectRate || 0;
-        updateStats();
-    }
+let currentKanjiId = null;   // 選択中の問題集ID
+let currentKanjiData = [];   // 選択中問題集の [{question, answer}]
+
+const LAST_QUIZ_KEY = 'kanjiLastQuiz';
+
+function progressKey(id) {
+    return 'kanjiProgress:' + id;
 }
 
-function saveProgress() {
-    localStorage.setItem('kanjiProgress', JSON.stringify({
+// 旧バージョンの単一キー進捗を、最初の問題集の進捗として1回だけ引き継ぐ
+function migrateLegacyProgress() {
+    const legacy = localStorage.getItem('kanjiProgress');
+    if (!legacy) return;
+    const firstId = (window.kanjiData && window.kanjiData[0]) ? window.kanjiData[0].id : null;
+    if (firstId && !localStorage.getItem(progressKey(firstId))) {
+        localStorage.setItem(progressKey(firstId), legacy);
+    }
+    localStorage.removeItem('kanjiProgress');
+}
+
+function loadProgress(id = currentKanjiId) {
+    wrongList = [];
+    lastQuizCorrectRate = 0;
+    if (id) {
+        const saved = localStorage.getItem(progressKey(id));
+        if (saved) {
+            const data = JSON.parse(saved);
+            wrongList = data.wrongList || [];
+            lastQuizCorrectRate = data.lastQuizCorrectRate || 0;
+        }
+    }
+    updateStats();
+}
+
+function saveProgress(id = currentKanjiId) {
+    if (!id) return;
+    localStorage.setItem(progressKey(id), JSON.stringify({
         wrongList: wrongList,
         lastQuizCorrectRate: lastQuizCorrectRate
     }));
 }
 
 function updateStats() {
-    const total = kanjiData.length;
+    const total = currentKanjiData.length;
     document.getElementById('progress').textContent = `問題数: ${total}問`;
     document.getElementById('score').textContent = `正解数: 0問`;
 
     const reviewBtn = document.getElementById('reviewBtn');
     reviewBtn.textContent = `復習する（まちがえた問題: ${wrongList.length}）`;
     reviewBtn.disabled = wrongList.length === 0;
+}
+
+// プルダウンに問題集の選択肢を並べる
+function renderKanjiOptions() {
+    const sel = document.getElementById('quizSelect');
+    const kanjiDataList = window.kanjiData || [];
+    sel.innerHTML = kanjiDataList.map(q => {
+        const n = parseQuiz(q.csv).length;
+        return `<option value="${q.id}">${q.title}（${n}問）</option>`;
+    }).join('');
+}
+
+// 問題集を1つ選んで現在の問題集にする
+function selectKanjiData(id) {
+    const meta = (window.kanjiData || []).find(q => q.id === id);
+    if (!meta) return;
+    currentKanjiData = parseQuiz(meta.csv);
+    currentKanjiId = id;
+    document.getElementById('quizSelect').value = id;
+    localStorage.setItem(LAST_QUIZ_KEY, id);
+    loadProgress(id);   // 内部で updateStats() を呼ぶ
+}
+
+// 問題文の先頭タグ（【読み】【四字熟語】）から出題種別を判定し、
+// 画面見出しと、タグを除いた表示用の問題文を返す。タグが無ければ書き取り。
+function classifyQuestion(question) {
+    if (question.startsWith('【読み】')) {
+        return { type: '読みを書こう', text: question.slice('【読み】'.length) };
+    }
+    if (question.startsWith('【四字熟語】')) {
+        return { type: '四字熟語を答えよう', text: question.slice('【四字熟語】'.length) };
+    }
+    return { type: '漢字で書いてみよう', text: question };
 }
 
 function shuffleArray(array) {
@@ -42,19 +100,16 @@ function shuffleArray(array) {
 }
 
 function showScreen(screenName) {
-    document.getElementById('mainScreen').classList.add('hidden');
-    document.getElementById('quizScreen').classList.add('hidden');
-    document.getElementById('resultScreen').classList.add('hidden');
-    document.getElementById('listScreen').classList.add('hidden');
+    document.querySelectorAll('#app > main').forEach(m => m.classList.add('hidden'));
     document.getElementById(screenName).classList.remove('hidden');
 }
 
 function showKanjiList() {
     const listEl = document.getElementById('kanjiList');
-    listEl.innerHTML = kanjiData.map((item, i) => `
+    listEl.innerHTML = currentKanjiData.map((item, i) => `
         <div class="kanji-list-item">
             <span class="list-number">${i + 1}</span>
-            <span class="list-question">${item.question}</span>
+            <span class="list-question">${classifyQuestion(item.question).text}</span>
             <span class="list-answer">${item.answer}</span>
         </div>
     `).join('');
@@ -70,14 +125,11 @@ function startQuiz(reviewMode = false) {
     if (reviewMode) {
         quizList = shuffleArray(wrongList);
     } else {
-        quizList = kanjiData.slice();
+        quizList = currentKanjiData.slice();
     }
 
-    console.log('kanjiDataの問題数:', kanjiData.length);
-    console.log('quizListの問題数:', quizList.length);
-
     if (quizList.length === 0) {
-        alert('復習する問題がありません');
+        alert(reviewMode ? '復習する問題がありません' : '問題集が選ばれていません');
         return;
     }
 
@@ -92,9 +144,6 @@ function showQuestion() {
     }
 
     const current = quizList[currentQuizIndex];
-    console.log('=== showQuestion 問題', currentQuizIndex + 1, '===');
-    console.log('問題文:', current.question);
-    console.log('答え:', current.answer);
 
     // 進捗表示を更新
     document.getElementById('quizProgress').textContent = `${currentQuizIndex + 1}/${quizList.length}`;
@@ -102,18 +151,17 @@ function showQuestion() {
     // 答えセクションを非表示
     document.getElementById('answerSection').classList.add('hidden');
 
-    // card-front全体を作り直す
+    // card-front全体を作り直す（タグから出題種別を判定）
+    const { type, text } = classifyQuestion(current.question);
     const cardFront = document.querySelector('#card .card-front');
     cardFront.innerHTML = `
-        <div class="question-type">漢字で書いてみよう</div>
-        <div class="kanji-large question-text">${current.question}</div>
+        <div class="question-type">${type}</div>
+        <div class="kanji-large question-text">${text}</div>
         <div class="button-group-horizontal">
             <button class="show-answer-btn">答えを見る</button>
             <button class="skip-btn">次の問題に進む</button>
         </div>
     `;
-
-    console.log('DOM更新完了');
 }
 
 function showAnswer(current) {
@@ -127,7 +175,6 @@ function showAnswer(current) {
 }
 
 function skipQuestion() {
-    console.log('skipQuestion: インデックス', currentQuizIndex);
     handleAnswer(true);
 }
 
@@ -186,11 +233,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('listBtn').addEventListener('click', () => showKanjiList());
     document.getElementById('listHomeBtn').addEventListener('click', () => showScreen('mainScreen'));
     document.getElementById('resetBtn').addEventListener('click', () => {
-        if (confirm('本当に進捗をリセットしますか？')) {
+        if (confirm('この問題集の進捗をリセットしますか？')) {
             wrongList = [];
+            lastQuizCorrectRate = 0;
             saveProgress();
             updateStats();
         }
+    });
+
+    // 問題集の切り替え（プルダウン）
+    document.getElementById('quizSelect').addEventListener('change', (e) => {
+        selectKanjiData(e.target.value);
     });
 
     // クイズ画面ボタン
@@ -226,6 +279,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 初期化
-    loadProgress();
-    updateStats();
+    const kanjiDataList = window.kanjiData || [];
+    if (kanjiDataList.length === 0) {
+        document.getElementById('progress').textContent = '問題集が読み込めませんでした';
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('reviewBtn').disabled = true;
+        return;
+    }
+
+    migrateLegacyProgress();
+    renderKanjiOptions();
+
+    // 前回選んだ問題集を復元（無ければ先頭）
+    const lastId = localStorage.getItem(LAST_QUIZ_KEY);
+    const startId = kanjiDataList.some(q => q.id === lastId) ? lastId : kanjiDataList[0].id;
+    selectKanjiData(startId);
 });
