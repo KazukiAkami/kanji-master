@@ -3,6 +3,7 @@
   "short_name": "漢字マスター",
   "description": "漢字を楽しく覚えよう",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
