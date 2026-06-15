@@ -360,6 +360,17 @@ button {
     color: #666;
 }
 
+.result-message {
+    margin-top: 16px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #e8710a;
+}
+
+.result-message:empty {
+    display: none;
+}
+
 .list-container {
     background: white;
     border-radius: 20px;
