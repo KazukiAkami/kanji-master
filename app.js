@@ -62,7 +62,7 @@ function renderKanjiOptions() {
     const sel = document.getElementById('quizSelect');
     const kanjiDataList = window.kanjiData || [];
     sel.innerHTML = kanjiDataList.map(q => {
-        const n = (Array.isArray(q.csv) ? q.csv : parseQuiz(q.csv)).length;
+        const n = parseQuiz(q.csv).length;
         return `<option value="${q.id}">${q.title}（${n}問）</option>`;
     }).join('');
 }
@@ -71,7 +71,7 @@ function renderKanjiOptions() {
 function selectKanjiData(id) {
     const meta = (window.kanjiData || []).find(q => q.id === id);
     if (!meta) return;
-    currentKanjiData = Array.isArray(meta.csv) ? meta.csv : parseQuiz(meta.csv);
+    currentKanjiData = parseQuiz(meta.csv);
     currentKanjiId = id;
     document.getElementById('quizSelect').value = id;
     localStorage.setItem(LAST_QUIZ_KEY, id);
