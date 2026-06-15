@@ -14,6 +14,29 @@ function progressKey(id) {
     return 'kanjiProgress:' + id;
 }
 
+// kanji-data.js の KANJI_DATA 文字列を問題集の配列に変換する。
+// 「## タイトル」で問題集が始まり、以降の行は「問題,答え」（最初のカンマで分割）。
+// 空行とカンマの無い行は無視する（壊れた行があってもアプリは動く）。
+function parseKanjiData(text) {
+    const blocks = [];
+    let cur = null;
+    for (const line of String(text).replace(/\r\n?/g, '\n').split('\n')) {
+        if (line.startsWith('## ')) {
+            const title = line.slice(3).trim();
+            cur = { id: title, title: title, items: [] }; // id はタイトルから導出
+            blocks.push(cur);
+        } else if (!cur || line.trim() === '') {
+            // 問題集が始まる前の行・空行はスキップ
+        } else {
+            const i = line.indexOf(','); // 最初のカンマで問題／答えに分割
+            if (i < 0) continue;          // カンマの無い行は無視
+            const q = line.slice(0, i).trim(), a = line.slice(i + 1).trim();
+            if (q || a) cur.items.push({ question: q, answer: a });
+        }
+    }
+    return blocks;
+}
+
 // 旧バージョンの単一キー進捗を、最初の問題集の進捗として1回だけ引き継ぐ
 function migrateLegacyProgress() {
     const legacy = localStorage.getItem('kanjiProgress');
@@ -62,7 +85,7 @@ function renderKanjiOptions() {
     const sel = document.getElementById('quizSelect');
     const kanjiDataList = window.kanjiData || [];
     sel.innerHTML = kanjiDataList.map(q => {
-        const n = parseQuiz(q.csv).length;
+        const n = q.items.length;
         return `<option value="${q.id}">${q.title}（${n}問）</option>`;
     }).join('');
 }
@@ -71,7 +94,7 @@ function renderKanjiOptions() {
 function selectKanjiData(id) {
     const meta = (window.kanjiData || []).find(q => q.id === id);
     if (!meta) return;
-    currentKanjiData = parseQuiz(meta.csv);
+    currentKanjiData = meta.items.slice();
     currentKanjiId = id;
     document.getElementById('quizSelect').value = id;
     localStorage.setItem(LAST_QUIZ_KEY, id);
@@ -218,9 +241,14 @@ function showResult() {
     lastQuizCorrectRate = percentage;
     saveProgress();
     updateStats();
+    updateLiveScore(); // updateStats() が 0問 に戻すので、実際の正解数を表示し直す
 
     document.querySelector('.result-score').textContent = `正答数: ${correctCount}/${total}`;
     document.querySelector('.result-detail').textContent = `正答率: ${percentage}%`;
+
+    // 全問正解のときはお祝いメッセージを出す
+    const msgEl = document.querySelector('.result-message');
+    msgEl.textContent = (correctCount === total) ? '🎉 全問正解です！すばらしい！' : '';
 
     showScreen('resultScreen');
 }
@@ -278,8 +306,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 初期化
-    const kanjiDataList = window.kanjiData || [];
+    // 初期化（kanji-data.js の KANJI_DATA 文字列をここで配列に変換する）
+    window.kanjiData = parseKanjiData(window.KANJI_DATA || '');
+    const kanjiDataList = window.kanjiData;
     if (kanjiDataList.length === 0) {
         document.getElementById('progress').textContent = '問題集が読み込めませんでした';
         document.getElementById('startBtn').disabled = true;
