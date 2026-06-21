@@ -187,10 +187,10 @@ button {
 .card {
     background: white;
     border-radius: 20px;
-    padding: 50px 30px;
+    padding: 36px 30px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    min-height: 350px;
+    min-height: 280px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -210,14 +210,14 @@ button {
 .kanji-large {
     font-size: 120px;
     font-weight: bold;
-    margin: 30px 0;
+    margin: 16px 0;
     color: #333;
     line-height: 1.2;
 }
 
 .question-text {
     font-size: 32px;
-    margin: 30px 0;
+    margin: 16px 0;
     color: #333;
     font-weight: normal;
     line-height: 1.6;
@@ -256,28 +256,20 @@ button {
     flex: 1;
 }
 
-.skip-btn {
-    background: #51cf66;
-    color: white;
-    padding: 16px 20px;
-    font-size: 16px;
-    flex: 1;
-}
-
-.skip-btn:active {
-    background: #40be56;
+.show-answer-btn:active {
+    background: #5566d6;
 }
 
 .answer-section {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    width: 100%;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #eee;
 }
 
 .answer-display {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .answer-reading {
@@ -452,11 +444,7 @@ button {
         min-height: 300px;
     }
 
-    .button-group-horizontal {
-        flex-direction: column;
-    }
-
-    .show-answer-btn, .skip-btn {
+    .show-answer-btn {
         font-size: 14px;
         padding: 14px 16px;
     }
