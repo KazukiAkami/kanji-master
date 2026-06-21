@@ -51,14 +51,26 @@ main {
     padding: 20px;
 }
 
-/* クイズ画面はカード上端を固定（上揃え）。答え表示でカードが下に伸びても
-   ヘッダーや枠の位置がズレないようにする */
-#quizScreen {
+/* クイズ画面・ホーム画面は白枠の上端をヘッダー直下にそろえる（上揃え）。
+   クイズ画面は答え表示でカードが下に伸びてもヘッダー・枠がズレない */
+#quizScreen,
+#mainScreen {
     align-items: flex-start;
 }
 
 .hidden {
     display: none !important;
+}
+
+.home-container {
+    max-width: 400px;
+    width: 100%;
+}
+
+/* クイズ画面のヘッダー行と同じ高さを占める透明スペーサー。
+   見えないが場所は取り、白枠の上端をクイズ画面のカード上端にそろえる */
+.home-header-spacer {
+    visibility: hidden;
 }
 
 .start-screen {
@@ -67,7 +79,6 @@ main {
     padding: 40px 30px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    max-width: 400px;
     width: 100%;
 }
 
