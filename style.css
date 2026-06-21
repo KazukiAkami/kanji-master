@@ -51,6 +51,12 @@ main {
     padding: 20px;
 }
 
+/* クイズ画面はカード上端を固定（上揃え）。答え表示でカードが下に伸びても
+   ヘッダーや枠の位置がズレないようにする */
+#quizScreen {
+    align-items: flex-start;
+}
+
 .hidden {
     display: none !important;
 }
@@ -190,7 +196,6 @@ button {
     padding: 36px 30px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    min-height: 280px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -441,7 +446,6 @@ button {
 
     .card {
         padding: 40px 20px;
-        min-height: 300px;
     }
 
     .show-answer-btn {
