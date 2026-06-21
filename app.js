@@ -187,8 +187,9 @@ function showQuestion() {
 }
 
 function showAnswer(current) {
-    const showAnswerBtn = document.querySelector('.show-answer-btn');
-    showAnswerBtn.style.display = 'none';
+    // 「答えを見る」ボタンを場所ごと隠す（余白が残らないようコンテナを非表示に）
+    const btnGroup = document.querySelector('#card .button-group-horizontal');
+    if (btnGroup) btnGroup.style.display = 'none';
 
     const answerDisplay = document.querySelector('.answer-display');
     answerDisplay.innerHTML = `<div class="answer-kanji">${current.answer}</div>`;
