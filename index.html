@@ -35,9 +35,31 @@
                     <select id="quizSelect"></select>
                 </div>
                 <button id="startBtn" class="primary-btn">学習をはじめる</button>
+                <button id="resumeBtn" class="primary-btn hidden">▶ つづきから</button>
+                <button id="restartFreshBtn" class="secondary-btn hidden">はじめからやる</button>
                 <button id="reviewBtn" class="secondary-btn">復習する（まちがえた問題）</button>
                 <button id="listBtn" class="secondary-btn">漢字一覧を見る</button>
-                <button id="resetBtn" class="reset-btn">進捗をリセット</button>
+                <div class="reset-menu">
+                    <button id="resetBtn" class="reset-btn" aria-haspopup="true" aria-expanded="false">進捗をリセット</button>
+                    <div id="resetDropdown" class="reset-dropdown hidden" role="menu">
+                        <p class="reset-dropdown-title">なにをリセットする？</p>
+                        <button id="resetProgressBtn" class="reset-option" role="menuitem">
+                            <span class="reset-option-icon">📊</span>
+                            <span class="reset-option-text">
+                                <span class="reset-option-label">学習の進捗・成績</span>
+                                <span class="reset-option-desc">つづきと正解率を消す（まちがえた問題は残る）</span>
+                            </span>
+                        </button>
+                        <button id="resetWrongBtn" class="reset-option" role="menuitem">
+                            <span class="reset-option-icon">✏️</span>
+                            <span class="reset-option-text">
+                                <span class="reset-option-label">まちがえた問題</span>
+                                <span class="reset-option-desc">復習リストをからにする</span>
+                            </span>
+                        </button>
+                        <button id="resetCancelBtn" class="reset-cancel" type="button">とじる</button>
+                    </div>
+                </div>
             </div>
           </div>
         </main>
@@ -57,7 +79,12 @@
                 <div class="quiz-header">
                     <button id="backBtn" class="back-btn">← 前の問題</button>
                     <span id="quizProgress"></span>
-                    <button id="quizHomeBtn" class="home-btn">🏠 ホーム</button>
+                    <div class="menu">
+                        <button id="menuBtn" class="menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="メニュー">⋮</button>
+                        <div id="menuDropdown" class="menu-dropdown hidden" role="menu">
+                            <button id="quizHomeBtn" class="menu-item" role="menuitem">🏠 ホームに戻る</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card-container">
