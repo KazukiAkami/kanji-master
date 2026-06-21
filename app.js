@@ -79,9 +79,14 @@ function saveProgress(id = currentKanjiId) {
 function saveSession() {
     if (isReviewMode) return;
     if (!quizList.length || currentQuizIndex >= quizList.length) return; // 未開始・完了済みは保存しない
+    // 「前の問題」で戻っていても、実際に解き進めた位置（未解答の最初の問題）から再開する。
+    // 解答済みは先頭から連続して埋まるため、最初の空きスロット＝つづきの問題。
+    let resumeIndex = userAnswers.findIndex(a => !a);
+    if (resumeIndex < 0) resumeIndex = userAnswers.length; // 全て解答済みなら次の問題から
+    resumeIndex = Math.min(Math.max(resumeIndex, currentQuizIndex), quizList.length - 1);
     currentSession = {
         quizList: quizList,
-        currentQuizIndex: currentQuizIndex,
+        currentQuizIndex: resumeIndex,
         userAnswers: userAnswers,
         correctCount: correctCount
     };
