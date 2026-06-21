@@ -33,7 +33,11 @@ npx serve .
 - **データ入力の手間とミスを減らすため、クオート・バッククオートを手書きしない形式にした**。`kanji-data.js` は構造（`{id, title, csv}` のオブジェクト配列）を持たず1つの文字列だけにし、パースは `app.js` の `parseKanjiData` に集約（旧 `csv.js`/`parseQuiz` は廃止）。区切りは「最初のカンマで分割」のみで、RFC4180のクオート処理やタブ区切りには対応しない
 - 状態はモジュールレベル変数（`currentQuizIndex`, `quizList`, `wrongList`, `currentKanjiId`, `currentKanjiData` など）で管理。クラスによるカプセル化なし
 - 選択中の問題集データは `currentKanjiData`（`window.kanjiData` から選んだ1問題集の `items` 配列）。プルダウンの選択で `selectKanjiData(id)` が `meta.items` をコピーする
-- **進捗は問題集ごとに分離**。`localStorage` のキー `kanjiProgress:<quizId>` に `{wrongList, lastQuizCorrectRate}` を保存。旧単一キー `kanjiProgress` は起動時 `migrateLegacyProgress()` で先頭問題集へ1回だけ移行。最後に選んだ問題集IDは `kanjiLastQuiz` に保存し次回復元
-- 動的生成ボタン（`.show-answer-btn`, `.skip-btn`）は `document` へのイベント委譲で処理
-- 通常モードは配列順に出題（シャッフルなし）、復習モードは間違えた問題をシャッフルして出題
-- `showScreen()` は `#app > main` を全て隠して対象だけ表示（画面追加に強い）
+- **進捗は問題集ごとに分離**。`localStorage` のキー `kanjiProgress:<quizId>` に `{wrongList, lastQuizCorrectRate, session}` を保存。旧単一キー `kanjiProgress` は起動時 `migrateLegacyProgress()` で先頭問題集へ1回だけ移行。最後に選んだ問題集IDは `kanjiLastQuiz` に保存し次回復元
+- **クイズ中断の途中状態を `session` として保存し「つづきから」を実現**。クイズ画面から離れるとき `saveSession()` が `{quizList, currentQuizIndex, userAnswers, correctCount}` を保存（通常モードのみ。復習モードは保存しない）。通常クイズの新規開始・完走で `clearSession()`／破棄。ホームに `session` があれば「つづきから／はじめからやる」を出し、左上の進捗・正解率もその途中状態を反映する（`updateStats()`）
+- **答えは必ず見てから進む**（スキップ無し）。「答えを見る」を押すと答えと「✓正解／✗まちがえた」が出て、その判定で次へ進む。問題と答えは1つの白枠（`#card`）にまとめ、遷移で枠がズレないようにしている
+- 動的生成ボタン（`.show-answer-btn`）は `document` へのイベント委譲で処理。クイズ画面のホームボタンは押し間違い防止で `⋮` メニュー（`#menuBtn`）内に格納
+- **進捗のリセットは2種類**。ホームの「進捗をリセット」メニューで「学習の進捗・成績（`session`＋`lastQuizCorrectRate`を消す。まちがえた問題は残す）」と「まちがえた問題（`wrongList`を空にする）」を選ばせる
+- 解答は問題ごとのスロット `userAnswers[currentQuizIndex]` に記録し、`correctCount` は毎回数え直す（前の問題に戻って解き直しても二重集計しない）
+- 通常モードは配列順に出題（シャッフルなし）、復習モードは間違えた問題をシャッフルして出題。結果画面の「もう一度」は直前と同じモードで再開し、復習で全問正解なら非表示
+- `showScreen()` は `#app > main` を全て隠して対象だけ表示（画面追加に強い）。ホーム遷移時に `updateStats()` を呼んで進捗表示を最新化する
