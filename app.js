@@ -182,7 +182,6 @@ function showQuestion() {
         <div class="kanji-large question-text">${text}</div>
         <div class="button-group-horizontal">
             <button class="show-answer-btn">答えを見る</button>
-            <button class="skip-btn">次の問題に進む</button>
         </div>
     `;
 }
@@ -195,10 +194,6 @@ function showAnswer(current) {
     answerDisplay.innerHTML = `<div class="answer-kanji">${current.answer}</div>`;
 
     document.getElementById('answerSection').classList.remove('hidden');
-}
-
-function skipQuestion() {
-    handleAnswer(true);
 }
 
 function handleAnswer(isCorrect) {
@@ -299,10 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (current) {
                 showAnswer(current);
             }
-        }
-
-        if (e.target.classList.contains('skip-btn')) {
-            skipQuestion();
         }
     });
 
