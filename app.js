@@ -4,6 +4,8 @@ let correctCount = 0;
 let wrongList = [];
 let userAnswers = [];
 let lastQuizCorrectRate = 0;
+let isReviewMode = false;   // 直近のクイズが復習モードだったか（「もう一度」用）
+let currentSession = null;  // 中断中のクイズ途中状態（無ければ null）。「つづきから」用
 
 let currentKanjiId = null;   // 選択中の問題集ID
 let currentKanjiData = [];   // 選択中問題集の [{question, answer}]
@@ -51,12 +53,14 @@ function migrateLegacyProgress() {
 function loadProgress(id = currentKanjiId) {
     wrongList = [];
     lastQuizCorrectRate = 0;
+    currentSession = null;
     if (id) {
         const saved = localStorage.getItem(progressKey(id));
         if (saved) {
             const data = JSON.parse(saved);
             wrongList = data.wrongList || [];
             lastQuizCorrectRate = data.lastQuizCorrectRate || 0;
+            currentSession = data.session || null;
         }
     }
     updateStats();
@@ -66,18 +70,64 @@ function saveProgress(id = currentKanjiId) {
     if (!id) return;
     localStorage.setItem(progressKey(id), JSON.stringify({
         wrongList: wrongList,
-        lastQuizCorrectRate: lastQuizCorrectRate
+        lastQuizCorrectRate: lastQuizCorrectRate,
+        session: currentSession
     }));
+}
+
+// クイズ中断時：今の途中状態を session として保存する（復習モードは保存しない＝つづきからは通常モードのみ）
+function saveSession() {
+    if (isReviewMode) return;
+    if (!quizList.length || currentQuizIndex >= quizList.length) return; // 未開始・完了済みは保存しない
+    currentSession = {
+        quizList: quizList,
+        currentQuizIndex: currentQuizIndex,
+        userAnswers: userAnswers,
+        correctCount: correctCount
+    };
+    saveProgress();
+}
+
+// 途中状態を破棄する（はじめから／完了時）
+function clearSession() {
+    currentSession = null;
+    saveProgress();
 }
 
 function updateStats() {
     const total = currentKanjiData.length;
-    document.getElementById('progress').textContent = `問題数: ${total}問`;
-    document.getElementById('score').textContent = `正解数: 0問`;
-
     const reviewBtn = document.getElementById('reviewBtn');
     reviewBtn.textContent = `復習する（まちがえた問題: ${wrongList.length}）`;
     reviewBtn.disabled = wrongList.length === 0;
+
+    // 中断中の途中状態があれば「つづきから／はじめから」、無ければ通常の開始ボタン
+    const hasSession = !!(currentSession && currentSession.quizList && currentSession.quizList.length);
+    const startBtn = document.getElementById('startBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const restartFreshBtn = document.getElementById('restartFreshBtn');
+    if (hasSession) {
+        const totalQ = currentSession.quizList.length;
+        const answers = currentSession.userAnswers || [];
+        const answered = answers.filter(Boolean).length;
+        const correct = answers.filter(a => a && a.isCorrect).length;
+        const rate = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+        // クイズ中の番号表示（currentQuizIndex+1）と揃え、再開する問題番号を出す
+        const resumeAt = Math.min((currentSession.currentQuizIndex || 0) + 1, totalQ);
+        resumeBtn.textContent = `▶ つづきから（${resumeAt}/${totalQ}問）`;
+        // 途中状態があるときは、そこまでの進捗・正解率を表示
+        document.getElementById('progress').textContent = `進捗: ${answered}/${totalQ}問`;
+        document.getElementById('score').textContent = `正解率: ${rate}%`;
+        startBtn.classList.add('hidden');
+        resumeBtn.classList.remove('hidden');
+        restartFreshBtn.classList.remove('hidden');
+    } else {
+        // 途中状態なし：まだ解いていないので進捗0・正解率0%で揃える
+        document.getElementById('progress').textContent = `進捗: 0/${total}問`;
+        document.getElementById('score').textContent = `正解率: 0%`;
+        startBtn.classList.remove('hidden');
+        resumeBtn.classList.add('hidden');
+        restartFreshBtn.classList.add('hidden');
+    }
 }
 
 // プルダウンに問題集の選択肢を並べる
@@ -123,8 +173,44 @@ function shuffleArray(array) {
 }
 
 function showScreen(screenName) {
+    closeMenu();
+    // クイズ画面から離れるとき、未完了なら途中状態を保存（つづきから用）
+    const leavingQuiz = !document.getElementById('quizScreen').classList.contains('hidden');
+    if (screenName !== 'quizScreen' && leavingQuiz) saveSession();
+    // ホームに戻るときは経路によらず必ず進捗・正解率を0表示に戻す
+    if (screenName === 'mainScreen') updateStats();
     document.querySelectorAll('#app > main').forEach(m => m.classList.add('hidden'));
     document.getElementById(screenName).classList.remove('hidden');
+}
+
+// ⋮メニューの開閉
+function toggleMenu() {
+    const dropdown = document.getElementById('menuDropdown');
+    const isOpen = dropdown.classList.toggle('hidden') === false;
+    document.getElementById('menuBtn').setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeMenu() {
+    const dropdown = document.getElementById('menuDropdown');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        document.getElementById('menuBtn').setAttribute('aria-expanded', 'false');
+    }
+}
+
+// 「進捗をリセット」メニューの開閉
+function toggleResetMenu() {
+    const dropdown = document.getElementById('resetDropdown');
+    const isOpen = dropdown.classList.toggle('hidden') === false;
+    document.getElementById('resetBtn').setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeResetMenu() {
+    const dropdown = document.getElementById('resetDropdown');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        document.getElementById('resetBtn').setAttribute('aria-expanded', 'false');
+    }
 }
 
 function showKanjiList() {
@@ -143,7 +229,7 @@ function startQuiz(reviewMode = false) {
     currentQuizIndex = 0;
     correctCount = 0;
     userAnswers = [];
-    document.getElementById('score').textContent = `正解数: 0問`;
+    isReviewMode = reviewMode;
 
     if (reviewMode) {
         quizList = shuffleArray(wrongList);
@@ -156,6 +242,28 @@ function startQuiz(reviewMode = false) {
         return;
     }
 
+    // 通常モードを新規開始したら、これまでの途中状態は破棄
+    if (!reviewMode) clearSession();
+
+    updateLiveScore(); // quizList 確定後に呼ぶ（進捗の総数を正しく表示するため）
+    showScreen('quizScreen');
+    showQuestion();
+}
+
+// 中断した通常クイズを途中から再開する
+function resumeQuiz() {
+    if (!currentSession || !currentSession.quizList || !currentSession.quizList.length) {
+        startQuiz(false);
+        return;
+    }
+    isReviewMode = false;
+    quizList = currentSession.quizList.slice();
+    userAnswers = (currentSession.userAnswers || []).slice();
+    correctCount = currentSession.correctCount || 0;
+    currentQuizIndex = currentSession.currentQuizIndex || 0;
+    if (currentQuizIndex >= quizList.length) currentQuizIndex = quizList.length - 1;
+
+    updateLiveScore();
     showScreen('quizScreen');
     showQuestion();
 }
@@ -200,14 +308,14 @@ function showAnswer(current) {
 function handleAnswer(isCorrect) {
     const current = quizList[currentQuizIndex];
 
-    userAnswers.push({
+    // 問題ごとのスロットに記録（戻って解き直しても上書きで、二重集計しない）
+    userAnswers[currentQuizIndex] = {
         question: current.question,
         answer: current.answer,
         isCorrect: isCorrect
-    });
+    };
 
     if (isCorrect) {
-        correctCount++;
         const index = wrongList.findIndex(q => q.question === current.question);
         if (index > -1) {
             wrongList.splice(index, 1);
@@ -219,6 +327,9 @@ function handleAnswer(isCorrect) {
         }
     }
 
+    // 解答済みスロットから正解数を数え直す（解き直しの取り消し・変更も反映）
+    correctCount = userAnswers.filter(a => a && a.isCorrect).length;
+
     updateLiveScore();
     saveProgress();
 
@@ -226,8 +337,13 @@ function handleAnswer(isCorrect) {
     showQuestion();
 }
 
+// クイズ中の進捗（解いた数/総数）と、その時点の正解率を表示する
 function updateLiveScore() {
-    document.getElementById('score').textContent = `正解数: ${correctCount}問`;
+    const total = quizList.length;
+    const answered = userAnswers.filter(Boolean).length; // 実際に解答したスロット数
+    const rate = answered > 0 ? Math.round((correctCount / answered) * 100) : 0;
+    document.getElementById('progress').textContent = `進捗: ${answered}/${total}問`;
+    document.getElementById('score').textContent = `正解率: ${rate}%`;
 }
 
 function showResult() {
@@ -235,16 +351,24 @@ function showResult() {
     const percentage = Math.round((correctCount / total) * 100);
 
     lastQuizCorrectRate = percentage;
+    if (!isReviewMode) currentSession = null; // 通常クイズを完走したら途中状態を破棄（復習完走では通常の途中状態を残す）
     saveProgress();
     updateStats();
-    updateLiveScore(); // updateStats() が 0問 に戻すので、実際の正解数を表示し直す
+    updateLiveScore(); // updateStats() が 0 に戻すので、最終的な進捗・正解率を表示し直す
 
     document.querySelector('.result-score').textContent = `正答数: ${correctCount}/${total}`;
     document.querySelector('.result-detail').textContent = `正答率: ${percentage}%`;
 
     // 全問正解のときはお祝いメッセージを出す
     const msgEl = document.querySelector('.result-message');
-    msgEl.textContent = (correctCount === total) ? '🎉 全問正解です！すばらしい！' : '';
+    msgEl.textContent = (correctCount === total) ? '🎉 全問正解！すばらしい！' : '';
+
+    // 「もう一度」ボタン：復習モードでまちがえた問題が残っていなければ隠す
+    // （残っていればもう一度で復習を再開できる。通常モードは常に表示）
+    const restartBtn = document.getElementById('restartBtn');
+    const hideRestart = isReviewMode && wrongList.length === 0;
+    restartBtn.classList.toggle('hidden', hideRestart);
+    restartBtn.textContent = isReviewMode ? 'まちがえた問題をもう一度' : 'もう一度';
 
     showScreen('resultScreen');
 }
@@ -253,16 +377,38 @@ function showResult() {
 document.addEventListener('DOMContentLoaded', function() {
     // メインボタン
     document.getElementById('startBtn').addEventListener('click', () => startQuiz(false));
+    document.getElementById('resumeBtn').addEventListener('click', () => resumeQuiz());
+    document.getElementById('restartFreshBtn').addEventListener('click', () => startQuiz(false));
     document.getElementById('reviewBtn').addEventListener('click', () => startQuiz(true));
     document.getElementById('listBtn').addEventListener('click', () => showKanjiList());
     document.getElementById('listHomeBtn').addEventListener('click', () => showScreen('mainScreen'));
-    document.getElementById('resetBtn').addEventListener('click', () => {
-        if (confirm('この問題集の進捗をリセットしますか？')) {
-            wrongList = [];
+
+    // 「進捗をリセット」メニュー（2種類のリセットを選ばせる）
+    document.getElementById('resetBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleResetMenu();
+    });
+    document.getElementById('resetProgressBtn').addEventListener('click', () => {
+        closeResetMenu();
+        if (confirm('この問題集の学習の進捗・成績をリセットしますか？\n（まちがえた問題は残ります）')) {
+            currentSession = null;
             lastQuizCorrectRate = 0;
             saveProgress();
             updateStats();
         }
+    });
+    document.getElementById('resetWrongBtn').addEventListener('click', () => {
+        closeResetMenu();
+        if (confirm('この問題集のまちがえた問題をリセットしますか？')) {
+            wrongList = [];
+            saveProgress();
+            updateStats();
+        }
+    });
+    document.getElementById('resetCancelBtn').addEventListener('click', () => closeResetMenu());
+    // メニュー外をタップしたら閉じる
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.reset-menu')) closeResetMenu();
     });
 
     // 問題集の切り替え（プルダウン）
@@ -281,11 +427,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('correctBtn').addEventListener('click', () => handleAnswer(true));
     document.getElementById('wrongBtn').addEventListener('click', () => handleAnswer(false));
-    document.getElementById('quizHomeBtn').addEventListener('click', () => { updateStats(); showScreen('mainScreen'); });
-    document.getElementById('titleBtn').addEventListener('click', () => { updateStats(); showScreen('mainScreen'); });
+    document.getElementById('quizHomeBtn').addEventListener('click', () => showScreen('mainScreen'));
+    document.getElementById('titleBtn').addEventListener('click', () => showScreen('mainScreen'));
+
+    // ⋮メニューの開閉（押し間違え防止でホームをメニュー内に格納）
+    document.getElementById('menuBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+    // メニュー外をタップしたら閉じる
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.menu')) closeMenu();
+    });
 
     // 結果画面ボタン
-    document.getElementById('restartBtn').addEventListener('click', () => startQuiz(false));
+    document.getElementById('restartBtn').addEventListener('click', () => startQuiz(isReviewMode));
     document.getElementById('homeBtn').addEventListener('click', () => showScreen('mainScreen'));
 
     // 問題画面のボタン（イベント委譲）
