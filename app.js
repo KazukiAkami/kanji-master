@@ -165,6 +165,9 @@ function classifyQuestion(question) {
     if (question.startsWith('【四字熟語】')) {
         return { type: '四字熟語を答えよう', text: question.slice('【四字熟語】'.length) };
     }
+    if (question.startsWith('【慣用句】')) {
+        return { type: '慣用句を答えよう', text: question.slice('【慣用句】'.length) };
+    }
     return { type: '漢字で書いてみよう', text: question };
 }
 
