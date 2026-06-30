@@ -287,6 +287,14 @@ function showQuestion() {
     // 進捗表示を更新
     document.getElementById('quizProgress').textContent = `${currentQuizIndex + 1}/${quizList.length}`;
 
+    // 1問目の場合は「ホーム」に、それ以降は「前の問題」に変更
+    const backBtn = document.getElementById('backBtn');
+    if (currentQuizIndex === 0) {
+        backBtn.textContent = '🏠 ホーム';
+    } else {
+        backBtn.textContent = '← 前の問題';
+    }
+
     // 答えセクションを非表示
     document.getElementById('answerSection').classList.add('hidden');
 
